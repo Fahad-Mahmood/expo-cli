@@ -8,21 +8,27 @@ export function getP12CertFingerprint(
   const certData = _getCertData(p12Buffer, passwordRaw);
   const certAsn1 = forge.pki.certificateToAsn1(certData);
   const certDer = forge.asn1.toDer(certAsn1).getBytes();
-  return forge.md.sha1
-    .create()
-    .update(certDer)
-    .digest()
-    .toHex()
-    .toUpperCase();
+  return forge.md.sha1.create().update(certDer).digest().toHex().toUpperCase();
 }
 
 export function findP12CertSerialNumber(
   p12Buffer: Buffer | string,
   passwordRaw: string | null
 ): string | null {
+  const { serialNumber } = getCertData(p12Buffer, passwordRaw);
+  return serialNumber;
+}
+
+function _processSerialNumber(maybeSerialNumber: string | null | undefined) {
+  return maybeSerialNumber ? maybeSerialNumber.replace(/^0+/, '').toUpperCase() : null;
+}
+
+export function getCertData(p12Buffer: Buffer | string, passwordRaw: string | null) {
   const certData = _getCertData(p12Buffer, passwordRaw);
-  const { serialNumber } = certData;
-  return serialNumber ? certData.serialNumber.replace(/^0+/, '').toUpperCase() : null;
+  return {
+    ...certData,
+    serialNumber: _processSerialNumber(certData.serialNumber),
+  };
 }
 
 function _getCertData(p12Buffer: Buffer | string, passwordRaw: string | null) {

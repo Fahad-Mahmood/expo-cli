@@ -1,6 +1,6 @@
 import { Android, Simulator, UserManager, Versions } from '@expo/xdl';
 import chalk from 'chalk';
-import CliTable from 'cli-table';
+import CliTable from 'cli-table3';
 import fs from 'fs-extra';
 import _ from 'lodash';
 import ora from 'ora';
@@ -24,7 +24,7 @@ import { CreateIosDist } from '../../credentials/views/IosDistCert';
 import { CreateOrReuseProvisioningProfileAdhoc } from '../../credentials/views/IosProvisioningProfileAdhoc';
 import { runCredentialsManager } from '../../credentials/route';
 
-export default function(program: Command) {
+export default function (program: Command) {
   program
     .command('client:ios [project-dir]')
     .option(
@@ -188,7 +188,7 @@ export default function(program: Command) {
           );
           log(table.toString());
           log(
-            'See https://docs.expo.io/versions/latest/guides/adhoc-builds/#optional-additional-configuration-steps for more details.'
+            'See https://docs.expo.io/guides/adhoc-builds/#optional-additional-configuration-steps for more details.'
           );
         }
 
@@ -199,6 +199,7 @@ export default function(program: Command) {
           ({ email } = await prompt({
             name: 'email',
             message: 'Please enter an email address to notify, when the build is completed:',
+            default: context.user.email,
             filter: value => value.trim(),
             validate: (value: string) =>
               /.+@.+/.test(value) ? true : "That doesn't look like a valid email.",
@@ -271,8 +272,7 @@ export default function(program: Command) {
           log(chalk.green(`${result.statusUrl}`));
         }
         log.newLine();
-      },
-      true
+      }
     );
 
   program
@@ -358,7 +358,7 @@ export default function(program: Command) {
       if (await Simulator.upgradeExpoAsync(targetClient.clientUrl)) {
         log('Done!');
       }
-    }, true);
+    });
 
   program
     .command('client:install:android')
@@ -443,5 +443,5 @@ export default function(program: Command) {
       if (await Android.upgradeExpoAsync(targetClient.clientUrl)) {
         log('Done!');
       }
-    }, true);
+    });
 }

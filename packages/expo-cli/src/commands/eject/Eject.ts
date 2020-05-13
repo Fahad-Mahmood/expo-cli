@@ -2,7 +2,6 @@ import {
   WarningAggregator as ConfigWarningAggregator,
   findConfigFile,
   getConfig,
-  isUsingYarn,
   readConfigJsonAsync,
   resolveModule,
 } from '@expo/config';
@@ -25,6 +24,7 @@ import configureIOSProjectAsync from '../apply/configureIOSProjectAsync';
 import configureAndroidProjectAsync from '../apply/configureAndroidProjectAsync';
 import { logConfigWarningsAndroid, logConfigWarningsIOS } from '../utils/logConfigWarnings';
 import maybeBailOnGitStatusAsync from '../utils/maybeBailOnGitStatusAsync';
+import { usesOldExpoUpdatesAsync } from '../utils/ProjectUtils';
 
 type ValidationErrorMessage = string;
 
@@ -76,21 +76,24 @@ export async function ejectAsync(projectRoot: string, options: EjectAsyncOptions
       'expo fetch:android:keystore'
     )}`
   );
-  log.nested(
-    `- 🚀 ${terminalLink(
-      'expo-updates',
-      'https://github.com/expo/expo/blob/master/packages/expo-updates/README.md'
-    )} has been configured in your project. Before you do a release build, make sure you run ${chalk.bold(
-      'expo publish'
-    )}. ${terminalLink('Learn more.', 'https://expo.fyi/release-builds-with-expo-updates')}`
-  );
+
+  if (await usesOldExpoUpdatesAsync(projectRoot)) {
+    log.nested(
+      `- 🚀 ${terminalLink(
+        'expo-updates',
+        'https://github.com/expo/expo/blob/master/packages/expo-updates/README.md'
+      )} has been configured in your project. Before you do a release build, make sure you run ${chalk.bold(
+        'expo publish'
+      )}. ${terminalLink('Learn more.', 'https://expo.fyi/release-builds-with-expo-updates')}`
+    );
+  }
 
   log.newLine();
   log.nested(`☑️  ${chalk.bold('When you are ready to run your project')}`);
   log.nested(
     'To compile and run your project in development, execute one of the following commands:'
   );
-  let packageManager = isUsingYarn(projectRoot) ? 'yarn' : 'npm';
+  let packageManager = PackageManager.isUsingYarn(projectRoot) ? 'yarn' : 'npm';
   log.nested(`- ${chalk.bold(packageManager === 'npm' ? 'npm run ios' : 'yarn ios')}`);
   log.nested(`- ${chalk.bold(packageManager === 'npm' ? 'npm run android' : 'yarn android')}`);
   log.nested(`- ${chalk.bold(packageManager === 'npm' ? 'npm run web' : 'yarn web')}`);
@@ -173,11 +176,17 @@ async function installNodeModulesAsync(projectRoot: string) {
     await packageManager.installAsync();
     installingDependenciesStep.succeed('Installed JavaScript dependencies.');
   } catch (e) {
-    // It doesn't matter for the rest of the process if this fails because the other steps can handle it gracefully.
-    // CocoaPods will fail to install but otherwise things will work fine.
     installingDependenciesStep.fail(
-      'Something when wrong installing dependencies, check your package manager logfile. Continuing with ejecting, you can debug this afterwards.'
+      chalk.red(
+        `Something when wrong installing JavaScript dependencies, check your ${
+          packageManager.name
+        } logfile or run ${chalk.bold(
+          `${packageManager.name.toLowerCase()} install`
+        )} again manually.`
+      )
     );
+    // TODO: actually show the error message from the package manager! :O
+    process.exit(1);
   }
 }
 
@@ -355,7 +364,7 @@ async function createNativeProjectsFromTemplateAsync(projectRoot: string): Promi
    * Add new app entry points
    */
   let removedPkgMain;
-  if (pkg.main !== EXPO_APP_ENTRY && pkg.main) {
+  if (pkg.main !== EXPO_APP_ENTRY && pkg.main !== 'index.js' && pkg.main) {
     removedPkgMain = pkg.main;
   }
   delete pkg.main;

@@ -8,7 +8,7 @@ import log from '../log';
 
 const COMMON_OPTIONS = ['id', 'latest', 'path'];
 
-export default function(program: Command) {
+export default function (program: Command) {
   const ANDROID_OPTIONS = [...COMMON_OPTIONS, 'key', 'track'];
   const androidCommand = program.command('upload:android [projectDir]').alias('ua');
   setCommonOptions(androidCommand, '.apk');
@@ -23,7 +23,9 @@ export default function(program: Command) {
     .description(
       'Uploads a standalone Android app to Google Play (works on macOS only). Uploads the latest build by default.'
     )
-    .asyncActionProjectDir(createUploadAction(AndroidUploader, ANDROID_OPTIONS));
+    .asyncActionProjectDir(createUploadAction(AndroidUploader, ANDROID_OPTIONS), {
+      checkConfig: true,
+    });
 
   const IOS_OPTIONS = [
     ...COMMON_OPTIONS,
@@ -74,12 +76,12 @@ export default function(program: Command) {
     .description(
       'Uploads a standalone app to Apple TestFlight (works on macOS only). Uploads the latest build by default.'
     )
-    .on('--help', function() {
+    .on('--help', function () {
       console.log('Available languages:');
       console.log(`  ${LANGUAGES.join(', ')}`);
       console.log();
     })
-    .asyncActionProjectDir(createUploadAction(IOSUploader, IOS_OPTIONS));
+    .asyncActionProjectDir(createUploadAction(IOSUploader, IOS_OPTIONS), { checkConfig: true });
 }
 
 function setCommonOptions(command: Command, fileExtension: string) {

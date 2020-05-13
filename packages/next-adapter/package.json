@@ -1,6 +1,6 @@
 {
   "name": "@expo/next-adapter",
-  "version": "2.1.1",
+  "version": "2.1.6",
   "description": "Adapter for using Next.js with Unimodules",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -8,7 +8,7 @@
     "watch": "tsc --watch",
     "build": "tsc",
     "prepare": "yarn run clean && yarn build",
-    "clean": "rm -rf build ./tsconfig.tsbuildinfo",
+    "clean": "rimraf build ./tsconfig.tsbuildinfo",
     "lint": "eslint ."
   },
   "bin": {
@@ -40,10 +40,13 @@
     "template",
     "build",
     "document.js",
+    "document.d.ts",
     "service-worker.js"
   ],
   "devDependencies": {
-    "@expo/babel-preset-cli": "0.2.9"
+    "@expo/babel-preset-cli": "0.2.13",
+    "@types/prompts": "^2.0.6",
+    "rimraf": "^3.0.2"
   },
   "peerDependencies": {
     "next": "^9",
@@ -54,13 +57,13 @@
     "access": "public"
   },
   "dependencies": {
-    "@expo/package-manager": "0.0.16",
-    "@expo/webpack-config": "0.12.1",
+    "@expo/package-manager": "0.0.21",
+    "@expo/webpack-config": "0.12.6",
     "@types/next": "^8.0.6",
     "chalk": "^4.0.0",
     "commander": "^4.0.1",
-    "enquirer": "^2.3.2",
     "fs-extra": "^8.1.0",
+    "prompts": "^2.3.2",
     "update-check": "^1.5.3"
   }
 }

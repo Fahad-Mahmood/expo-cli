@@ -29,6 +29,7 @@ jobs:
           [
             babel-preset-cli,
             config,
+            dev-server,
             expo-cli,
             expo-codemod,
             json-file,

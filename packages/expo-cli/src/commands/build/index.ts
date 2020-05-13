@@ -1,15 +1,44 @@
 import { UrlUtils, Webpack } from '@expo/xdl';
 import { Command } from 'commander';
+import chalk from 'chalk';
 import BaseBuilder from './BaseBuilder';
 import IOSBuilder from './ios/IOSBuilder';
 import AndroidBuilder from './AndroidBuilder';
 import log from '../../log';
 import CommandError from '../../CommandError';
+import * as ProjectUtils from '../utils/ProjectUtils';
 import { askBuildType } from './utils';
+import prompt from '../../prompt';
 
 import { AndroidOptions, IosOptions } from './BaseBuilder.types';
 
-export default function(program: Command) {
+async function maybeBailOnWorkflowWarning(projectDir: string, platform: 'ios' | 'android') {
+  const { workflow } = await ProjectUtils.findProjectRootAsync(projectDir);
+  if (workflow === 'managed') {
+    return false;
+  }
+
+  const command = `expo build:${platform}`;
+  log.warn(chalk.bold(`⚠️  ${command} currently only supports managed workflow apps.`));
+  log.warn(
+    `If you proceed with this command, we can run the build for you but it will not include any custom native modules or changes that you have made to your local native projects.`
+  );
+  log.warn(
+    `Unless you are sure that you know what you are doing, we recommend aborting the build and doing a native release build through ${
+      platform === 'ios' ? 'Xcode' : 'Android Studio'
+    }.`
+  );
+
+  const answer = await prompt({
+    type: 'confirm',
+    name: 'ignoreWorkflowWarning',
+    message: `Would you like to proceed?`,
+  });
+
+  return !answer.ignoreWorkflowWarning;
+}
+
+export default function (program: Command) {
   program
     .command('build:ios [project-dir]')
     .alias('bi')
@@ -46,27 +75,37 @@ export default function(program: Command) {
       'The URL of an externally hosted manifest (for self-hosted apps).'
     )
     .option('--skip-credentials-check', 'Skip checking credentials.')
+    .option('--skip-workflow-check', 'Skip warning about build service bare workflow limitations.')
     .description(
       'Build a standalone IPA for your project, signed and ready for submission to the Apple App Store.'
     )
-    .asyncActionProjectDir(async (projectDir: string, options: IosOptions) => {
-      if (options.publicUrl && !UrlUtils.isHttps(options.publicUrl)) {
-        throw new CommandError('INVALID_PUBLIC_URL', '--public-url must be a valid HTTPS URL.');
-      }
-      let channelRe = new RegExp(/^[a-z\d][a-z\d._-]*$/);
-      if (!channelRe.test(options.releaseChannel)) {
-        log.error(
-          'Release channel name can only contain lowercase letters, numbers and special characters . _ and -'
-        );
-        process.exit(1);
-      }
-      options.type = await askBuildType(options.type, {
-        archive: 'Deploy the build to the store',
-        simulator: 'Run the build on a simulator',
-      });
-      const iosBuilder = new IOSBuilder(projectDir, options);
-      return iosBuilder.command();
-    });
+    .asyncActionProjectDir(
+      async (projectDir: string, options: IosOptions) => {
+        if (!options.skipWorkflowCheck) {
+          if (await maybeBailOnWorkflowWarning(projectDir, 'ios')) {
+            return;
+          }
+        }
+
+        if (options.publicUrl && !UrlUtils.isHttps(options.publicUrl)) {
+          throw new CommandError('INVALID_PUBLIC_URL', '--public-url must be a valid HTTPS URL.');
+        }
+        let channelRe = new RegExp(/^[a-z\d][a-z\d._-]*$/);
+        if (!channelRe.test(options.releaseChannel)) {
+          log.error(
+            'Release channel name can only contain lowercase letters, numbers and special characters . _ and -'
+          );
+          process.exit(1);
+        }
+        options.type = await askBuildType(options.type, {
+          archive: 'Deploy the build to the store',
+          simulator: 'Run the build on a simulator',
+        });
+        const iosBuilder = new IOSBuilder(projectDir, options);
+        return iosBuilder.command();
+      },
+      { checkConfig: true }
+    );
 
   program
     .command('build:android [project-dir]')
@@ -79,28 +118,38 @@ export default function(program: Command) {
     .option('--keystore-alias <alias>', 'Keystore Alias')
     .option('--generate-keystore', 'Generate Keystore if one does not exist')
     .option('--public-url <url>', 'The URL of an externally hosted manifest (for self-hosted apps)')
+    .option('--skip-workflow-check', 'Skip warning about build service bare workflow limitations.')
     .option('-t --type <build>', 'Type of build: [app-bundle|apk].')
     .description(
       'Build a standalone APK or App Bundle for your project, signed and ready for submission to the Google Play Store.'
     )
-    .asyncActionProjectDir(async (projectDir: string, options: AndroidOptions) => {
-      if (options.publicUrl && !UrlUtils.isHttps(options.publicUrl)) {
-        throw new CommandError('INVALID_PUBLIC_URL', '--public-url must be a valid HTTPS URL.');
-      }
-      let channelRe = new RegExp(/^[a-z\d][a-z\d._-]*$/);
-      if (!channelRe.test(options.releaseChannel)) {
-        log.error(
-          'Release channel name can only contain lowercase letters, numbers and special characters . _ and -'
-        );
-        process.exit(1);
-      }
-      options.type = await askBuildType(options.type, {
-        apk: 'Build a package to deploy to the store or install directly on Android devices',
-        'app-bundle': 'Build an optimized bundle for the store',
-      });
-      const androidBuilder = new AndroidBuilder(projectDir, options);
-      return androidBuilder.command();
-    });
+    .asyncActionProjectDir(
+      async (projectDir: string, options: AndroidOptions) => {
+        if (!options.skipWorkflowCheck) {
+          if (await maybeBailOnWorkflowWarning(projectDir, 'android')) {
+            return;
+          }
+        }
+
+        if (options.publicUrl && !UrlUtils.isHttps(options.publicUrl)) {
+          throw new CommandError('INVALID_PUBLIC_URL', '--public-url must be a valid HTTPS URL.');
+        }
+        let channelRe = new RegExp(/^[a-z\d][a-z\d._-]*$/);
+        if (!channelRe.test(options.releaseChannel)) {
+          log.error(
+            'Release channel name can only contain lowercase letters, numbers and special characters . _ and -'
+          );
+          process.exit(1);
+        }
+        options.type = await askBuildType(options.type, {
+          apk: 'Build a package to deploy to the store or install directly on Android devices',
+          'app-bundle': 'Build an optimized bundle for the store',
+        });
+        const androidBuilder = new AndroidBuilder(projectDir, options);
+        return androidBuilder.command();
+      },
+      { checkConfig: true }
+    );
 
   program
     .command('build:web [project-dir]')
@@ -117,9 +166,7 @@ export default function(program: Command) {
           ...options,
           dev: typeof options.dev === 'undefined' ? false : options.dev,
         });
-      },
-      /* skipProjectValidation: */ false,
-      /* skipAuthCheck: */ true
+      }
     );
 
   program
@@ -136,5 +183,5 @@ export default function(program: Command) {
       }
       const builder = new BaseBuilder(projectDir, options);
       return builder.commandCheckStatus();
-    }, /* skipProjectValidation: */ true);
+    });
 }

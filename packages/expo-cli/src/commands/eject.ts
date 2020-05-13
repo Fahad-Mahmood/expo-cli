@@ -37,7 +37,7 @@ async function action(
   }
 }
 
-export default function(program: Command) {
+export default function (program: Command) {
   program
     .command('eject [project-dir]')
     .description(
@@ -52,5 +52,5 @@ export default function(program: Command) {
       '-f --force',
       'Will attempt to generate an iOS project even when the system is not running macOS. Unsafe and may fail.'
     )
-    .asyncActionProjectDir(action, /* skipProjectValidation: */ false, /* skipAuthCheck: */ true);
+    .asyncActionProjectDir(action, { checkConfig: true });
 }

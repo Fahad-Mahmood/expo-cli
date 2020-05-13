@@ -483,10 +483,9 @@ function formatDistCert(
       "\n    ❓ Validity of this certificate on Apple's servers is unknown."
     );
   }
-  return `Distribution Certificate (Cert ID: ${distCert.certId ||
-    '-----'}, Serial number: ${serialNumber}, Team ID: ${
-    distCert.teamId
-  })${usedByString}${validityText}`;
+  return `Distribution Certificate (Cert ID: ${
+    distCert.certId || '-----'
+  }, Serial number: ${serialNumber}, Team ID: ${distCert.teamId})${usedByString}${validityText}`;
 }
 
 async function generateDistCert(ctx: Context): Promise<DistCert> {
@@ -506,7 +505,7 @@ async function generateDistCert(ctx: Context): Promise<DistCert> {
           {}
         );
 
-      // https://docs.expo.io/versions/latest/distribution/app-signing/#summary
+      // https://docs.expo.io/distribution/app-signing/#summary
       const here = terminalLink('here', 'https://bit.ly/3cfJJkQ');
       log(
         chalk.grey(`✅  Distribution Certificates can be revoked with no production side effects`)

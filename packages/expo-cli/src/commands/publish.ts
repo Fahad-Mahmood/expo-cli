@@ -37,13 +37,19 @@ export async function action(projectDir: string, options: Options = {}) {
 
   if (pkg.dependencies['expo-updates'] && pkg.dependencies['expokit']) {
     log.warn(
-      `Warning: You have both the ${chalk.bold('expokit')} and ${chalk.bold('expo-updates')} packages installed in package.json.`
+      `Warning: You have both the ${chalk.bold('expokit')} and ${chalk.bold(
+        'expo-updates'
+      )} packages installed in package.json.`
     );
     log.warn(
-      `These two packages are incompatible and ${chalk.bold('publishing updates with expo-updates will not work if expokit is installed.')}`
+      `These two packages are incompatible and ${chalk.bold(
+        'publishing updates with expo-updates will not work if expokit is installed.'
+      )}`
     );
     log.warn(
-      `If you intent to use ${chalk.bold('expo-updates')}, please remove ${chalk.bold('expokit')} from your dependencies.`
+      `If you intend to use ${chalk.bold('expo-updates')}, please remove ${chalk.bold(
+        'expokit'
+      )} from your dependencies.`
     );
   }
 
@@ -133,7 +139,7 @@ export async function action(projectDir: string, options: Options = {}) {
     log.warn(
       'We noticed that you have not built a standalone app with this SDK version and release channel before. ' +
         'Remember that OTA updates will only work for builds with matching SDK versions and release channels. ' +
-        'Read more here: https://docs.expo.io/versions/latest/workflow/publishing/#limitations'
+        'Read more here: https://docs.expo.io/workflow/publishing/#limitations'
     );
   }
 
@@ -219,7 +225,7 @@ function getExampleManifestUrl(url: string, sdkVersion: string | undefined): str
   }
 }
 
-export default function(program: Command) {
+export default function (program: Command) {
   program
     .command('publish [project-dir]')
     .alias('p')
@@ -238,5 +244,5 @@ export default function(program: Command) {
       "The release channel to publish to. Default is 'default'.",
       'default'
     )
-    .asyncActionProjectDir(action, true);
+    .asyncActionProjectDir(action);
 }

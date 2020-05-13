@@ -10,7 +10,7 @@ type Options = { url?: string; secret?: string; event?: string };
 
 const WEBHOOK_TYPES = ['build'];
 
-export default function(program: Command) {
+export default function (program: Command) {
   program
     .command('webhooks:set [project-dir]')
     .option('--url <webhook-url>', 'Webhook to be called after building the app.')
@@ -36,7 +36,7 @@ export default function(program: Command) {
       }
 
       log('All done!');
-    }, true);
+    });
 
   program
     .command('webhooks:show [project-dir]')
@@ -65,7 +65,7 @@ export default function(program: Command) {
         log.error(e);
         throw new Error('Unable to fetch webhooks for this project.');
       }
-    }, true);
+    });
 
   program
     .command('webhooks:clear [project-dir]')
@@ -86,7 +86,7 @@ export default function(program: Command) {
         throw new Error('Unable to clear webhook and secret for this project.');
       }
       log('All done!');
-    }, true);
+    });
 }
 
 async function _sanitizeOptions(options: Options): Promise<Webhooks.WebhookData> {

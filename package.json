@@ -4,11 +4,11 @@
     "packages/*"
   ],
   "scripts": {
-    "bootstrap": "lerna bootstrap",
-    "postbootstrap": "lerna run prepare --stream",
+    "format": "prettier --write .",
+    "build": "lerna run prepare --stream",
     "postinstall": "expo-yarn-workspaces check-workspace-dependencies",
     "publish": "echo \"This script is deprecated. Run \\\"node ./scripts/publish.js\\\" instead.\"; exit 1",
-    "start": "lerna run watch --parallel --ignore @expo/dev-tools --ignore expo-optimize --ignore @expo/next-adapter --ignore @expo/electron-adapter",
+    "start": "lerna --ignore \"@expo/{dev-tools,next-adapter,electron-adapter}\" --ignore expo-optimize --ignore pod-install --ignore uri-scheme run watch --parallel",
     "tsc": "echo 'You are trying to run \"tsc\" in the workspace root. Run it from an individual package instead.' && exit 1",
     "lint": "eslint . --ext js,ts"
   },
@@ -35,9 +35,9 @@
     "jest": "^25.2.6",
     "lerna": "3.4.1",
     "lint-staged": "^8.0.4",
-    "prettier": "^1.19.0"
+    "prettier": "^2.0.5"
   },
   "resolutions": {
-    "@types/webpack": "4.32.1"
+    "@types/webpack": "4.41.8"
   }
 }

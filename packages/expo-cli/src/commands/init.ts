@@ -11,11 +11,12 @@ import trimStart from 'lodash/trimStart';
 import wordwrap from 'wordwrap';
 import * as PackageManager from '@expo/package-manager';
 import path from 'path';
-import terminalLink from 'terminal-link';
 import getenv from 'getenv';
+import terminalLink from 'terminal-link';
 import prompt from '../prompt';
 import log from '../log';
 import CommandError from '../CommandError';
+import { usesOldExpoUpdatesAsync } from './utils/ProjectUtils';
 
 type Options = {
   template?: string;
@@ -226,7 +227,13 @@ async function action(projectDir: string, command: Command) {
     } catch (_) {}
 
     log.newLine();
-    logProjectReady({ cdPath, packageManager, workflow: 'bare' });
+    let showPublishBeforeBuildWarning = await usesOldExpoUpdatesAsync(projectPath);
+    await logProjectReadyAsync({
+      cdPath,
+      packageManager,
+      workflow: 'bare',
+      showPublishBeforeBuildWarning,
+    });
     if (!podsInstalled && process.platform === 'darwin') {
       log.newLine();
       log.nested(
@@ -239,18 +246,20 @@ async function action(projectDir: string, command: Command) {
     }
   } else {
     log.newLine();
-    logProjectReady({ cdPath, packageManager, workflow: 'managed' });
+    await logProjectReadyAsync({ cdPath, packageManager, workflow: 'managed' });
   }
 }
 
-function logProjectReady({
+function logProjectReadyAsync({
   cdPath,
   packageManager,
   workflow,
+  showPublishBeforeBuildWarning,
 }: {
   cdPath: string;
   packageManager: string;
   workflow: 'managed' | 'bare';
+  showPublishBeforeBuildWarning?: boolean;
 }) {
   log.nested(chalk.bold(`✅ Your project is ready!`));
   log.newLine();
@@ -281,7 +290,7 @@ function logProjectReady({
     macOSComment =
       ' # you need to use macOS to build the iOS project - use managed workflow if you need to do iOS development without a Mac';
   } else if (!isMacOS && workflow === 'managed') {
-    macOSComment = ' # requires an iOS device or access to a macOS for a simulator';
+    macOSComment = ' # requires an iOS device or macOS for access to an iOS simulator';
   }
   log.nested(
     `- ${chalk.bold(packageManager === 'npm' ? 'npm run ios' : 'yarn ios')}${macOSComment}`
@@ -296,14 +305,17 @@ function logProjectReady({
         'android'
       )} directories with their respective IDEs.`
     );
-    log.nested(
-      `🚀 Please note that ${terminalLink(
-        'expo-updates',
-        'https://github.com/expo/expo/blob/master/packages/expo-updates/README.md'
-      )} has been configured in your project. Before you do a release build, make sure you run ${chalk.bold(
-        'expo publish'
-      )}. ${terminalLink('Learn more.', 'https://expo.fyi/release-builds-with-expo-updates')}`
-    );
+
+    if (showPublishBeforeBuildWarning) {
+      log.nested(
+        `- 🚀 ${terminalLink(
+          'expo-updates',
+          'https://github.com/expo/expo/blob/master/packages/expo-updates/README.md'
+        )} has been configured in your project. Before you do a release build, make sure you run ${chalk.bold(
+          'expo publish'
+        )}. ${terminalLink('Learn more.', 'https://expo.fyi/release-builds-with-expo-updates')}`
+      );
+    }
     // TODO: add equivalent of this or some command to wrap it:
     // # ios
     // $ open -a Xcode ./ios/{PROJECT_NAME}.xcworkspace
@@ -455,7 +467,7 @@ async function promptForManagedConfig(
   return { expo };
 }
 
-export default function(program: Command) {
+export default function (program: Command) {
   program
     .command('init [project-dir]')
     .alias('i')
